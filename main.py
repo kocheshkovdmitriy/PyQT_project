@@ -104,7 +104,6 @@ class Task(QWidget):
 
     def run_test(self):
         self.answer.setText("Тестируем вот этот код:\n{}".format(self.decision.toPlainText()))
-        TestTask('asdf', 'sdf', 'sdfg')
 
     def closeEvent(self, event):
         msg = QMessageBox()
