@@ -78,10 +78,10 @@ class Auth(QDialog):
 
 
 class Task(QWidget):
-    def __init__(self, text, mainWin):
+    def __init__(self, pk, mainWin):
         super(Task, self).__init__()
         self.mainWin = mainWin
-        self.task = text
+        self.task = self.__get_task(pk)
         uic.loadUi('FormTask.ui', self)
 
         self.setWindowTitle(self.task[1])
@@ -132,6 +132,16 @@ class Task(QWidget):
         else:
             event.ignore()
 
+    def __get_task(self, pk):
+        print('aa')
+        conn = sqlite3.connect('QT_project')
+        cur = conn.cursor()
+        result = cur.execute(f"SELECT id, title, task_text"
+                             f" FROM task "
+                             f"WHERE id = {pk}").fetchall()
+        conn.close()
+        return result[0]
+
 
 class MainWindow(QMainWindow):
     user = (None, None, None)
@@ -176,13 +186,7 @@ class MainWindow(QMainWindow):
 
 
     def show_task(self, item):
-        conn = sqlite3.connect('QT_project')
-        cur = conn.cursor()
-        result = cur.execute(f"SELECT id, title, task_text"
-                             f" FROM task "
-                             f"WHERE id = {item.data().split()[0]}").fetchall()
-        conn.close()
-        self.second_form = Task(result[0], self)
+        self.second_form = Task(item.data().split()[0], self)
         self.second_form.show()
         self.hide()
 
