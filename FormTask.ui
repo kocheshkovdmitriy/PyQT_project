@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="task">
+    <widget class="QLabel" name="label_task">
      <property name="text">
       <string>тут будет текст задачи</string>
      </property>
@@ -51,7 +51,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <widget class="QPushButton" name="last_task">
+      <widget class="QPushButton" name="previous_task">
        <property name="text">
         <string>Предыдущая задача</string>
        </property>

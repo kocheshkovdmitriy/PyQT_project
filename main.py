@@ -81,12 +81,16 @@ class Task(QWidget):
     def __init__(self, text, mainWin):
         super(Task, self).__init__()
         self.mainWin = mainWin
+        self.task = text
         uic.loadUi('FormTask.ui', self)
 
-        self.setWindowTitle(text[0])
+        self.setWindowTitle(self.task[1])
+        self.label_task.setText(self.task[2])
         self.btn1.clicked.connect(self.run_code)
         self.btn2.clicked.connect(self.run_test)
-        self.task.setText(text[1])
+        self.previous_task.clicked.connect(self.show_previous_task)
+        self.next_task.clicked.connect(self.show_next_task)
+        self.back_button.clicked.connect(self.back)
 
     def run_code(self):
         code = self.decision.toPlainText()
@@ -104,6 +108,17 @@ class Task(QWidget):
 
     def run_test(self):
         self.answer.setText("Тестируем вот этот код:\n{}".format(self.decision.toPlainText()))
+
+    def show_previous_task(self):
+        index_task = (self.mainWin.tasks.index(self.task[0]) - 1) % len(self.mainWin.tasks)
+        print('текущая задача', self.task[0], 'предыдущая', self.mainWin.tasks[index_task])
+
+    def show_next_task(self):
+        index_task = (self.mainWin.tasks.index(self.task[0]) + 1) % len(self.mainWin.tasks)
+        print('текущая задача', self.task[0], 'следующая', self.mainWin.tasks[index_task])
+
+    def back(self):
+        self.close()
 
     def closeEvent(self, event):
         msg = QMessageBox()
@@ -127,6 +142,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Тренажер по python')
         self.about_dialog = About()
         self.auth_dialog = Auth()
+        self.tasks = list()
 
         self.radioButton_1.setChecked(True)
         self.radioButton_1.hide()
@@ -144,15 +160,16 @@ class MainWindow(QMainWindow):
         self.show_list_task.clicked.connect(self.choise_task)
         self.about.triggered.connect(self.show_about)
         self.auth_button.clicked.connect(self.show_auth)
-        self.filter_button.clicked.connect(self.run_filter)
         self.list_task.clicked.connect(self.show_task)
 
     def choise_task(self):
         sql_request = self.__get_sql_request()
         conn = sqlite3.connect('QT_project')
         cur = conn.cursor()
-        result = [' '.join(str(i) for i in el)
-                  for el in cur.execute(sql_request).fetchall()]
+        result = cur.execute(sql_request).fetchall()
+        self.tasks = [el[0] for el in result]
+        print(self.tasks)
+        result = [' '.join(str(i) for i in el) for el in result]
         conn.close()
         self.list_task.clear()
         self.list_task.addItems(result)
@@ -161,7 +178,7 @@ class MainWindow(QMainWindow):
     def show_task(self, item):
         conn = sqlite3.connect('QT_project')
         cur = conn.cursor()
-        result = cur.execute(f"SELECT title, task_text"
+        result = cur.execute(f"SELECT id, title, task_text"
                              f" FROM task "
                              f"WHERE id = {item.data().split()[0]}").fetchall()
         conn.close()
@@ -183,14 +200,6 @@ class MainWindow(QMainWindow):
                 self.radioButton_1.show()
                 self.radioButton_2.show()
                 self.radioButton_3.show()
-
-    def run_filter(self):
-        print(
-            self.comboBox_section.currentText(),
-            self.radioButton_1.isChecked(),
-            self.radioButton_2.isChecked(),
-            self.radioButton_3.isChecked()
-        )
 
     def __get_sql_request(self):
         choise_filters = list()
@@ -216,7 +225,6 @@ class MainWindow(QMainWindow):
                           FROM task 
                           {('WHERE ' + ' AND '.join(choise_filters)) if choise_filters else ''}
                           ORDER BY id"""
-        print(sql_request)
         return sql_request
 
 
