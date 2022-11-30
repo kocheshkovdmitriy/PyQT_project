@@ -1,6 +1,7 @@
 import sys
 
 from PyQt5 import uic
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, QMessageBox, QInputDialog
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QLineEdit, QListWidget, QListWidgetItem
 
@@ -83,11 +84,11 @@ class Task(QWidget):
         self.mainWin = mainWin
         self.task = self.__get_task(pk)
         uic.loadUi('FormTask.ui', self)
+        self.setWindowIcon(QIcon('python.jpg'))
 
-        self.setWindowTitle(self.task[1])
-        self.label_task.setText(self.task[2])
-        self.btn1.clicked.connect(self.run_code)
-        self.btn2.clicked.connect(self.run_test)
+        self.__view_task()
+        self.button_run_code.clicked.connect(self.run_code)
+        self.button_run_test.clicked.connect(self.run_test)
         self.previous_task.clicked.connect(self.show_previous_task)
         self.next_task.clicked.connect(self.show_next_task)
         self.back_button.clicked.connect(self.back)
@@ -111,10 +112,14 @@ class Task(QWidget):
 
     def show_previous_task(self):
         index_task = (self.mainWin.tasks.index(self.task[0]) - 1) % len(self.mainWin.tasks)
+        self.task = self.__get_task(self.mainWin.tasks[index_task])
+        self.__view_task()
         print('текущая задача', self.task[0], 'предыдущая', self.mainWin.tasks[index_task])
 
     def show_next_task(self):
         index_task = (self.mainWin.tasks.index(self.task[0]) + 1) % len(self.mainWin.tasks)
+        self.task = self.__get_task(self.mainWin.tasks[index_task])
+        self.__view_task()
         print('текущая задача', self.task[0], 'следующая', self.mainWin.tasks[index_task])
 
     def back(self):
@@ -133,7 +138,6 @@ class Task(QWidget):
             event.ignore()
 
     def __get_task(self, pk):
-        print('aa')
         conn = sqlite3.connect('QT_project')
         cur = conn.cursor()
         result = cur.execute(f"SELECT id, title, task_text"
@@ -141,6 +145,10 @@ class Task(QWidget):
                              f"WHERE id = {pk}").fetchall()
         conn.close()
         return result[0]
+
+    def __view_task(self):
+        self.setWindowTitle(self.task[1])
+        self.label_task.setText(self.task[2])
 
 
 class MainWindow(QMainWindow):
@@ -150,6 +158,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         uic.loadUi('MainWin.ui', self)
         self.setWindowTitle('Тренажер по python')
+        self.setWindowIcon(QIcon('python.jpg'))
         self.about_dialog = About()
         self.auth_dialog = Auth()
         self.tasks = list()
@@ -178,7 +187,6 @@ class MainWindow(QMainWindow):
         cur = conn.cursor()
         result = cur.execute(sql_request).fetchall()
         self.tasks = [el[0] for el in result]
-        print(self.tasks)
         result = [' '.join(str(i) for i in el) for el in result]
         conn.close()
         self.list_task.clear()

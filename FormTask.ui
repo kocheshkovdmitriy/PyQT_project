@@ -30,7 +30,7 @@
       <widget class="QLineEdit" name="data"/>
      </item>
      <item>
-      <widget class="QPushButton" name="btn1">
+      <widget class="QPushButton" name="button_run_code">
        <property name="text">
         <string>запустить</string>
        </property>
@@ -39,7 +39,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QPushButton" name="btn2">
+    <widget class="QPushButton" name="button_run_test">
      <property name="text">
       <string>проверить</string>
      </property>
