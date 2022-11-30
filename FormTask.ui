@@ -22,12 +22,12 @@
     </widget>
    </item>
    <item>
-    <widget class="QTextEdit" name="decision"/>
+    <widget class="QTextEdit" name="input_decision"/>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QLineEdit" name="data"/>
+      <widget class="QLineEdit" name="input_data"/>
      </item>
      <item>
       <widget class="QPushButton" name="button_run_code">
@@ -46,7 +46,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QTextEdit" name="answer"/>
+    <widget class="QTextEdit" name="output_answer"/>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">

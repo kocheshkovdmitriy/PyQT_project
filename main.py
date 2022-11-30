@@ -6,10 +6,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, QMessag
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QLineEdit, QListWidget, QListWidgetItem
 
 import sqlite3
-import shlex
-import subprocess
 
-
+from run_and_test_code import run, testing
 
 
 class About(QDialog):
@@ -94,33 +92,26 @@ class Task(QWidget):
         self.back_button.clicked.connect(self.back)
 
     def run_code(self):
-        code = self.decision.toPlainText()
-        command = f'python -c "{code}"'
-        command = shlex.split(command)
-        process = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        outs, errs = process.communicate(timeout=1)
-
+        code = self.input_decision.toPlainText()
+        outs, errs = run(code, self.input_data.text())
         print(outs.decode(), errs.decode())
-        self.answer.setText(f'{outs.decode()}{errs.decode()}')
+        self.output_answer.setText(f'{outs.decode()}{errs.decode()}')
 
     def run_test(self):
-        self.answer.setText("Тестируем вот этот код:\n{}".format(self.decision.toPlainText()))
+        code = self.input_decision.toPlainText()
+        self.output_answer.setText(testing(code, self.task[3]))
 
     def show_previous_task(self):
+        self.__clear_input()
         index_task = (self.mainWin.tasks.index(self.task[0]) - 1) % len(self.mainWin.tasks)
         self.task = self.__get_task(self.mainWin.tasks[index_task])
         self.__view_task()
-        print('текущая задача', self.task[0], 'предыдущая', self.mainWin.tasks[index_task])
 
     def show_next_task(self):
+        self.__clear_input()
         index_task = (self.mainWin.tasks.index(self.task[0]) + 1) % len(self.mainWin.tasks)
         self.task = self.__get_task(self.mainWin.tasks[index_task])
         self.__view_task()
-        print('текущая задача', self.task[0], 'следующая', self.mainWin.tasks[index_task])
 
     def back(self):
         self.close()
@@ -140,7 +131,7 @@ class Task(QWidget):
     def __get_task(self, pk):
         conn = sqlite3.connect('QT_project')
         cur = conn.cursor()
-        result = cur.execute(f"SELECT id, title, task_text"
+        result = cur.execute(f"SELECT id, title, task_text, tests"
                              f" FROM task "
                              f"WHERE id = {pk}").fetchall()
         conn.close()
@@ -149,6 +140,11 @@ class Task(QWidget):
     def __view_task(self):
         self.setWindowTitle(self.task[1])
         self.label_task.setText(self.task[2])
+
+    def __clear_input(self):
+        self.input_decision.clear()
+        self.input_data.clear()
+        self.output_answer.clear()
 
 
 class MainWindow(QMainWindow):
