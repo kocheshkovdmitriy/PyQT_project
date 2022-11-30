@@ -99,7 +99,9 @@ class Task(QWidget):
 
     def run_test(self):
         code = self.input_decision.toPlainText()
-        self.output_answer.setText(testing(code, self.task[3]))
+        result, flag_done = testing(code, self.task[3])
+        self.output_answer.setText(result)
+        print(flag_done)
 
     def show_previous_task(self):
         self.__clear_input()

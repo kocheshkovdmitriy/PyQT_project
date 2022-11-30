@@ -1,6 +1,5 @@
 import shlex
 import subprocess
-import sys
 
 def run(code:str, data: str):
     with open('test.txt', 'w', encoding='UTF-8') as in_data:
@@ -17,17 +16,18 @@ def run(code:str, data: str):
     return outs, errs
 
 def testing(code: str, tests: str):
-    print(code)
     tests = tests.split('@$@')
     data_tests = {index + 1: test.split('@_@') for index, test in enumerate(tests)}
     print(data_tests)
     result = ''
+    flag_done = True
     for num_test in data_tests.keys():
         result += f'Тест{num_test}: '
         outs, errs = run(code, data_tests[num_test][0])
         if outs.decode().strip() == data_tests[num_test][1]:
             result += 'Ok\n'
         else:
+            flag_done = False
             result += 'No\n'
             if errs:
                 result += f'{errs.decode()}\n'
@@ -36,5 +36,7 @@ def testing(code: str, tests: str):
                           f'Ожидаемый результат: {data_tests[num_test][1]}\n' \
                           f'Вывод: {outs.decode()}\n'
     print(result)
-    return result
+    return result, flag_done
+
+
 
