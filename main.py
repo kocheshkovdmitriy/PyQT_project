@@ -93,7 +93,7 @@ class Task(QWidget):
 
     def run_code(self):
         code = self.input_decision.toPlainText()
-        outs, errs = run(code, self.input_data.text())
+        outs, errs = run(code, self.input_data.toPlainText())
         print(outs.decode(), errs.decode())
         self.output_answer.setText(f'{outs.decode()}{errs.decode()}')
 
