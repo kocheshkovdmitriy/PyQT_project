@@ -79,10 +79,12 @@ class Auth(QDialog):
 class Task(QWidget):
     def __init__(self, pk, mainWin):
         super(Task, self).__init__()
-        self.mainWin = mainWin
-        self.task = self.__get_task(pk)
         uic.loadUi('FormTask.ui', self)
         self.setWindowIcon(QIcon('python.jpg'))
+        self.mainWin = mainWin
+        self.task = self.__get_task(pk)
+        self.__get_decision_task(pk)
+
 
         self.__view_task()
         self.button_run_code.clicked.connect(self.run_code)
@@ -139,9 +141,23 @@ class Task(QWidget):
         conn.close()
         return result[0]
 
+    def __get_decision_task(self, pk):
+        if not MainWindow.user[0] is None:
+            conn = sqlite3.connect('QT_project')
+            cur = conn.cursor()
+            result = cur.execute(f"SELECT task_decision"
+                                 f" FROM user_decision "
+                                 f"WHERE user_id = {MainWindow.user[2]} AND task_id = {pk}").fetchall()
+            conn.close()
+            print(result)
+            if result:
+                self.input_decision.setText(result[0][0])
+
+
     def __view_task(self):
         self.setWindowTitle(self.task[1])
         self.label_task.setText(self.task[2])
+        self.__get_decision_task(self.task[0])
 
     def __clear_input(self):
         self.input_decision.clear()
@@ -150,6 +166,12 @@ class Task(QWidget):
 
 
 class MainWindow(QMainWindow):
+    '''
+    Виджет гглавного окна.
+    :arg
+        user(login, name, id) пользователь
+    '''
+
     user = (None, None, None)
 
     def __init__(self):
@@ -189,7 +211,6 @@ class MainWindow(QMainWindow):
         conn.close()
         self.list_task.clear()
         self.list_task.addItems(result)
-
 
     def show_task(self, item):
         self.second_form = Task(item.data().split()[0], self)
