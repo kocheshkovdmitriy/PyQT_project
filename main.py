@@ -38,7 +38,6 @@ class Auth(QDialog):
         if result:
             if str(result[0][1]) == password:
                 MainWindow.user = (result[0][0], result[0][2], result[0][3])
-                print(MainWindow.user)
             else:
                 msgBox = QMessageBox()
                 msgBox.setText("Неверный пароль!!!")
@@ -51,14 +50,12 @@ class Auth(QDialog):
                 "Хотите создать пользователя?\n"
                 "введите имя:")
             if ok_pressed:
-                print(login, password, name)
                 conn = sqlite3.connect('QT_project')
                 cur = conn.cursor()
                 cur.execute(f"INSERT INTO user(login, password, name) VALUES ('{login}', '{password}', '{name}')")
                 conn.commit()
                 conn.close()
                 MainWindow.user = (login, name)
-                print(MainWindow.user)
         else:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)
@@ -77,6 +74,13 @@ class Auth(QDialog):
 
 
 class Task(QWidget):
+    """
+    Виджет окна решения задачи.
+    :arg
+        mainWin объект главного окна, в нем список выбранных задач и пользователь
+        task[id, title, text, tests, decision, flag_done] текущая задача
+    """
+
     def __init__(self, pk, mainWin):
         super(Task, self).__init__()
         uic.loadUi('FormTask.ui', self)
@@ -97,7 +101,6 @@ class Task(QWidget):
     def run_code(self):
         code = self.input_decision.toPlainText()
         outs, errs = run(code, self.input_data.toPlainText())
-        print(outs.decode(), errs.decode())
         self.output_answer.setText(f'{outs.decode()}{errs.decode()}')
 
     def run_test(self):
@@ -194,9 +197,9 @@ class Task(QWidget):
 
 class MainWindow(QMainWindow):
     '''
-    Виджет гглавного окна.
+    Виджет главного окна.
     :arg
-        user(login, name, id) пользователь
+        user(login, name, id) авторизированный пользователь, по умолчанию (None, None, None)
     '''
 
     user = (None, None, None)
