@@ -81,9 +81,10 @@ class Task(QWidget):
         super(Task, self).__init__()
         uic.loadUi('FormTask.ui', self)
         self.setWindowIcon(QIcon('python.jpg'))
+        self.label_verdict.hide()
+        self.label_verdict.setStyleSheet("background-color: #94db70;")
         self.mainWin = mainWin
         self.task = self.__get_task(pk)
-        self.__get_decision_task(pk)
 
 
         self.__view_task()
@@ -103,7 +104,33 @@ class Task(QWidget):
         code = self.input_decision.toPlainText()
         result, flag_done = testing(code, self.task[3])
         self.output_answer.setText(result)
-        print(flag_done)
+        if not MainWindow.user[0] is None:
+            conn = sqlite3.connect('QT_project')
+            cur = conn.cursor()
+            if self.task[4]:
+                print('Перезаписываем решение')
+                request = f"""UPDATE user_decision SET complited = '{flag_done}', task_decision = "{code}" 
+                              WHERE task_id = '{self.task[0]}' AND user_id = '{MainWindow.user[2]}'"""
+            else:
+                print('Сохраняем решение')
+                request = f"""INSERT INTO user_decision(task_id, complited, task_decision, user_id)
+                              VALUES ('{self.task[0]}', '{flag_done}', "{code}", '{MainWindow.user[2]}')"""
+            self.task[4], self.task[5] = code, flag_done
+            if self.task[5]:
+                self.label_verdict.show()
+            else:
+                self.label_verdict.hide()
+            cur.execute(request)
+            conn.commit()
+            conn.close()
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("Сохранять решения могут только авторизированные пользователи!!!\n"
+                        "Если хотите сохранить решения вернитесь к списку задач и авторизируйтесь.")
+            msg.setWindowTitle("Сохранение не удалось")
+            msg.setStandardButtons(QMessageBox.Ok)
+            retval = msg.exec_()
 
     def show_previous_task(self):
         self.__clear_input()
@@ -135,29 +162,29 @@ class Task(QWidget):
     def __get_task(self, pk):
         conn = sqlite3.connect('QT_project')
         cur = conn.cursor()
-        result = cur.execute(f"SELECT id, title, task_text, tests"
+        task = cur.execute(f"SELECT id, title, task_text, tests"
                              f" FROM task "
                              f"WHERE id = {pk}").fetchall()
-        conn.close()
-        return result[0]
-
-    def __get_decision_task(self, pk):
+        decision = []
         if not MainWindow.user[0] is None:
-            conn = sqlite3.connect('QT_project')
-            cur = conn.cursor()
-            result = cur.execute(f"SELECT task_decision"
+            decision = cur.execute(f"SELECT task_decision, complited"
                                  f" FROM user_decision "
                                  f"WHERE user_id = {MainWindow.user[2]} AND task_id = {pk}").fetchall()
-            conn.close()
-            print(result)
-            if result:
-                self.input_decision.setText(result[0][0])
-
+        conn.close()
+        if not decision:
+            decision = [['', 0]]
+        task = list(task[0])
+        task.extend(decision[0])
+        return task
 
     def __view_task(self):
         self.setWindowTitle(self.task[1])
         self.label_task.setText(self.task[2])
-        self.__get_decision_task(self.task[0])
+        self.input_decision.setText(self.task[4])
+        if self.task[5]:
+            self.label_verdict.show()
+        else:
+            self.label_verdict.hide()
 
     def __clear_input(self):
         self.input_decision.clear()

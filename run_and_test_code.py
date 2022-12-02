@@ -20,7 +20,7 @@ def testing(code: str, tests: str):
     data_tests = {index + 1: test.split('@_@') for index, test in enumerate(tests)}
     print(data_tests)
     result = ''
-    flag_done = True
+    flag_done = 1
     for num_test in data_tests.keys():
         result += f'Тест{num_test}: '
         outs, errs = run(code, data_tests[num_test][0])
@@ -30,7 +30,7 @@ def testing(code: str, tests: str):
         if data_ok == data_real:
             result += 'Ok\n'
         else:
-            flag_done = False
+            flag_done = 0
             result += 'No\n'
             if errs:
                 result += f'{errs.decode()}\n'
