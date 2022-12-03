@@ -20,7 +20,6 @@ def run(code:str, data: str):
 def testing(code: str, tests: str):
     tests = tests.split('@$@')
     data_tests = {index + 1: test.split('@_@') for index, test in enumerate(tests)}
-    print(data_tests)
     result = ''
     flag_done = 1
     for num_test in data_tests.keys():
@@ -28,7 +27,6 @@ def testing(code: str, tests: str):
         outs, errs = run(code, data_tests[num_test][0])
         data_ok = [el.strip() for el in data_tests[num_test][1].strip().split('\n')]
         data_real = [el.strip() for el in outs.decode().strip().split('\n')]
-        print(data_ok, data_real)
         if data_ok == data_real:
             result += 'Ok\n'
         else:
@@ -40,7 +38,6 @@ def testing(code: str, tests: str):
                 result += f'Входные данные:\n{data_tests[num_test][0]}\n' \
                           f'Ожидаемый результат:\n{data_tests[num_test][1]}\n' \
                           f'Вывод:\n{outs.decode()}\n'
-    print(result)
     return result, flag_done
 
 

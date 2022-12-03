@@ -31,12 +31,9 @@ class Auth(QDialog):
     def auth_user_ok(self):
         login = self.login.text()
         password = self.password.text()
-        conn = sqlite3.connect('QT_project')
-        cur = conn.cursor()
-        result = cur.execute(f"SELECT login, password, name, id FROM user WHERE login = '{login}'").fetchall()
-        conn.close()
-        if result:
-            if str(result[0][1]) == password:
+        user = self.__get_user(login)
+        if user:
+            if str(user[0][1]) == password:
                 MainWindow.user = (result[0][0], result[0][2], result[0][3])
             else:
                 msgBox = QMessageBox()
@@ -55,7 +52,8 @@ class Auth(QDialog):
                 cur.execute(f"INSERT INTO user(login, password, name) VALUES ('{login}', '{password}', '{name}')")
                 conn.commit()
                 conn.close()
-                MainWindow.user = (login, name)
+                user = self.__get_user(login)
+                MainWindow.user = (login, name, user[0][3])
         else:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)
@@ -71,6 +69,13 @@ class Auth(QDialog):
         self.login.clear()
         self.password.clear()
 
+    def __get_user(self, login):
+        conn = sqlite3.connect('QT_project')
+        cur = conn.cursor()
+        result = cur.execute(f"SELECT login, password, name, id FROM user WHERE login = '{login}'").fetchall()
+        conn.close()
+        return result
+
 
 
 class Task(QWidget):
@@ -78,6 +83,8 @@ class Task(QWidget):
     Виджет окна решения задачи.
     :arg
         mainWin объект главного окна, в нем список выбранных задач и пользователь
+            .user(login, name, id)
+            .tasks[id,...]
         task[id, title, text, tests, decision, flag_done] текущая задача
     """
 
@@ -89,7 +96,6 @@ class Task(QWidget):
         self.label_verdict.setStyleSheet("background-color: #94db70;")
         self.mainWin = mainWin
         self.task = self.__get_task(pk)
-
 
         self.__view_task()
         self.button_run_code.clicked.connect(self.run_code)
