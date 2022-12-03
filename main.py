@@ -34,7 +34,7 @@ class Auth(QDialog):
         user = self.__get_user(login)
         if user:
             if str(user[0][1]) == password:
-                MainWindow.user = (result[0][0], result[0][2], result[0][3])
+                MainWindow.user = (user[0][0], user[0][2], user[0][3])
             else:
                 msgBox = QMessageBox()
                 msgBox.setText("Неверный пароль!!!")
