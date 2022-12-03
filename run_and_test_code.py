@@ -2,9 +2,11 @@ import shlex
 import subprocess
 
 def run(code:str, data: str):
+    with open('temp.txt', 'w', encoding='UTF-8') as in_code:
+        in_code.write(code)
     with open('test.txt', 'w', encoding='UTF-8') as in_data:
         in_data.write(data)
-    command = f'python -c "{code}"'
+    command = f'python temp.txt'
     command = shlex.split(command)
     process = subprocess.Popen(
         command,
