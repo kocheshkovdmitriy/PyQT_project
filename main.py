@@ -20,33 +20,64 @@ class About(QDialog):
         )
         self.layout().addWidget(self.lable)
 
+class InfoMessage(QMessageBox):
+    def __init__(self, title: str, message: str):
+        super(InfoMessage, self).__init__()
+        self.setIcon(QMessageBox.Information)
+        self.setWindowTitle(title)
+        self.setText(message)
+        self.setStandardButtons(QMessageBox.Ok)
 
 class Auth(QDialog):
-    def __init__(self):
+    def __init__(self, flag: bool, title: str):
         super(Auth, self).__init__()
         uic.loadUi('auth_form.ui', self)
+        self.setWindowTitle(title)
+        self.flag = flag
+        if flag:
+            self.label_name.hide()
+            self.input_name.hide()
+        else:
+            self.label_name.show()
+            self.input_name.show()
         self.buttonBox.accepted.connect(self.auth_user_ok)
         self.buttonBox.rejected.connect(self.auth_user_not)
 
     def auth_user_ok(self):
-        login = self.login.text()
-        password = self.password.text()
-        user = self.__get_user(login)
-        if user:
-            if str(user[0][1]) == password:
-                MainWindow.user = (user[0][0], user[0][2], user[0][3])
+        if self.flag:
+            print('авторизируем')
+            login = self.login.text()
+            password = self.password.text()
+            user = self.__get_user(login)
+            if user:
+                if str(user[0][1]) == password:
+                    MainWindow.user = (user[0][0], user[0][2], user[0][3])
+                    if self.check_save_user.isChecked():
+                        self.__save_authentication(MainWindow.user)
+                    else:
+                        self.__save_authentication((None, None, None))
+                else:
+                    msgBox = QMessageBox()
+                    msgBox.setText("Неверный пароль!!!")
+                    msgBox.exec()
+            elif login:
+                msg = InfoMessage(
+                    "Ошибка имени пользователя",
+                    "Пользователя с таким именем не существует!\nПоворите ввод данных или зарегистрируйтесь."
+                )
+                retval = msg.exec_()
             else:
-                msgBox = QMessageBox()
-                msgBox.setText("Неверный пароль!!!")
-                msgBox.exec()
-        elif login:
-            name, ok_pressed = QInputDialog.getText(
-                self,
-                "Неверный логин",
-                "Пользователя с таким логином не существует!\n"
-                "Хотите создать пользователя?\n"
-                "введите имя:")
-            if ok_pressed:
+                msg = InfoMessage(
+                    "Ошибка имени пользователя",
+                    "Поле 'логин' не может быть пустым!\n Введите ваши данные еще раз"
+                )
+                retval = msg.exec_()
+        else:
+            print('регистрируем')
+            login = self.login.text()
+            password = self.password.text()
+            name = self.input_name.text()
+            if login and password and name:
                 conn = sqlite3.connect('QT_project')
                 cur = conn.cursor()
                 cur.execute(f"INSERT INTO user(login, password, name) VALUES ('{login}', '{password}', '{name}')")
@@ -54,16 +85,20 @@ class Auth(QDialog):
                 conn.close()
                 user = self.__get_user(login)
                 MainWindow.user = (login, name, user[0][3])
-        else:
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("Поле 'логин' не может быть пустым!\n Введите ваши данные еще раз")
-            msg.setWindowTitle("Ошибка имени пользователя")
-            msg.setStandardButtons(QMessageBox.Ok)
-            retval = msg.exec_()
+                if self.check_save_user.isChecked():
+                    self.__save_authentication(MainWindow.user)
+                else:
+                    self.__save_authentication((None, None, None))
+            else:
+                msg = InfoMessage(
+                    "Ошибка регистрации",
+                    "Все три поля должны быть обязательно заполненны!"
+                )
+                retval = msg.exec_()
 
         self.login.clear()
         self.password.clear()
+        self.input_name.clear()
 
     def auth_user_not(self):
         self.login.clear()
@@ -75,6 +110,12 @@ class Auth(QDialog):
         result = cur.execute(f"SELECT login, password, name, id FROM user WHERE login = '{login}'").fetchall()
         conn.close()
         return result
+
+    def __save_authentication(self, user):
+        with open('log.txt', 'w', encoding='UTF-8') as log:
+            print(user)
+            log.write(' '.join(map(str, user)))
+            print('сессия сохранена')
 
 
 
@@ -133,12 +174,11 @@ class Task(QWidget):
             conn.commit()
             conn.close()
         else:
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("Сохранять решения могут только авторизированные пользователи!!!\n"
-                        "Если хотите сохранить решения вернитесь к списку задач и авторизируйтесь.")
-            msg.setWindowTitle("Сохранение не удалось")
-            msg.setStandardButtons(QMessageBox.Ok)
+            msg = InfoMessage(
+                "Сохранение не удалось",
+                "Сохранять решения могут только авторизированные пользователи!!!\n"
+                "Если хотите сохранить решения вернитесь к списку задач и авторизируйтесь."
+            )
             retval = msg.exec_()
 
     def show_previous_task(self):
@@ -157,10 +197,10 @@ class Task(QWidget):
         self.close()
 
     def closeEvent(self, event):
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Information)
-        msg.setText("Вы действительно хотите уйти?\n Не отправленное решение не будет сохранено!")
-        msg.setWindowTitle("Завершение работы")
+        msg = InfoMessage(
+            "Завершение работы",
+            "Вы действительно хотите уйти?\n Не отправленное решение не будет сохранено!"
+        )
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         if msg.exec() == 1024:
             self.mainWin.show()
@@ -216,13 +256,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Тренажер по python')
         self.setWindowIcon(QIcon('python.jpg'))
         self.about_dialog = About()
-        self.auth_dialog = Auth()
+        self.__get_last_autauthentication()
         self.tasks = list()
 
         self.radioButton_1.setChecked(True)
-        self.radioButton_1.hide()
-        self.radioButton_2.hide()
-        self.radioButton_3.hide()
 
         conn = sqlite3.connect('QT_project')
         cur = conn.cursor()
@@ -235,6 +272,7 @@ class MainWindow(QMainWindow):
         self.show_list_task.clicked.connect(self.choise_task)
         self.about.triggered.connect(self.show_about)
         self.auth_button.clicked.connect(self.show_auth)
+        self.reg_button.clicked.connect(self.show_reg)
         self.list_task.clicked.connect(self.show_task)
 
     def choise_task(self):
@@ -257,16 +295,34 @@ class MainWindow(QMainWindow):
         self.about_dialog.show()
 
     def show_auth(self):
-        self.auth_dialog.show()
+        auth_dialog = Auth(True, 'Авторизация пользователя')
+        auth_dialog.show()
         self.hide()
 
-        if self.auth_dialog.exec_() == QDialog.Accepted:
-            self.show()
-            if not MainWindow.user[0] is None:
-                self.welcome_user.setText(f'Здравствуйте, {MainWindow.user[1]}')
-                self.radioButton_1.show()
-                self.radioButton_2.show()
-                self.radioButton_3.show()
+        if auth_dialog.exec_() == QDialog.Accepted:
+            self.__welcome_text()
+        self.show()
+
+    def show_reg(self):
+        auth_dialog = Auth(False, 'Регистрация пользователя')
+        auth_dialog.show()
+        self.hide()
+
+        if auth_dialog.exec_() == QDialog.Accepted:
+            self.__welcome_text()
+        self.show()
+
+    def __welcome_text(self):
+        if not MainWindow.user[0] is None:
+            self.welcome_user.setText(f'Здравствуйте, {MainWindow.user[1]}')
+            self.radioButton_1.show()
+            self.radioButton_2.show()
+            self.radioButton_3.show()
+        else:
+            self.welcome_user.setText(f'Здравствуйте, пожалуйста авторизируйтесь')
+            self.radioButton_1.hide()
+            self.radioButton_2.hide()
+            self.radioButton_3.hide()
 
     def __get_sql_request(self):
         choise_filters = list()
@@ -293,6 +349,15 @@ class MainWindow(QMainWindow):
                           {('WHERE ' + ' AND '.join(choise_filters)) if choise_filters else ''}
                           ORDER BY id"""
         return sql_request
+
+    def __get_last_autauthentication(self):
+        with open('log.txt', 'r', encoding='UTF-8') as log:
+            user = log.read().strip().split()
+            if user[0] != 'None':
+                MainWindow.user = tuple(user)
+        print(MainWindow.user)
+        self.__welcome_text()
+
 
 
 if __name__ == '__main__':

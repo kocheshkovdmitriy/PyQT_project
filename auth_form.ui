@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>215</width>
-    <height>154</height>
+    <width>231</width>
+    <height>206</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -33,6 +33,23 @@
    </item>
    <item>
     <widget class="QLineEdit" name="password"/>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_name">
+     <property name="text">
+      <string>Введите имя</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="input_name"/>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="check_save_user">
+     <property name="text">
+      <string>сохранить авторизацию</string>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
