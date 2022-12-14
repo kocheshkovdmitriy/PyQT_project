@@ -2,23 +2,24 @@ import sys
 
 from PyQt5 import uic
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, QMessageBox, QInputDialog
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QLineEdit, QListWidget, QListWidgetItem
 
 import sqlite3
 
 from run_and_test_code import run, testing
+from UI_Form import Ui_MainWindow, Ui_FormTask, Ui_Dialog
 
 
 class About(QDialog):
     def __init__(self):
         super(About, self).__init__()
         self.setLayout(QHBoxLayout(self))
-        self.lable = QLabel(
-            'Тpенажер по Python',
-            self
-        )
+        with open('README.md', 'r', encoding='UTF-8') as inf:
+            self.lable = QLabel(inf.read(), self)
         self.layout().addWidget(self.lable)
+
 
 class InfoMessage(QMessageBox):
     def __init__(self, title: str, message: str):
@@ -28,10 +29,11 @@ class InfoMessage(QMessageBox):
         self.setText(message)
         self.setStandardButtons(QMessageBox.Ok)
 
-class Auth(QDialog):
+
+class Auth(QDialog, Ui_Dialog):
     def __init__(self, flag: bool, title: str):
         super(Auth, self).__init__()
-        uic.loadUi('auth_form.ui', self)
+        self.setupUi(self)
         self.setWindowTitle(title)
         self.flag = flag
         if flag:
@@ -45,7 +47,6 @@ class Auth(QDialog):
 
     def auth_user_ok(self):
         if self.flag:
-            print('авторизируем')
             login = self.login.text()
             password = self.password.text()
             user = self.__get_user(login)
@@ -73,7 +74,6 @@ class Auth(QDialog):
                 )
                 retval = msg.exec_()
         else:
-            print('регистрируем')
             login = self.login.text()
             password = self.password.text()
             name = self.input_name.text()
@@ -113,25 +113,22 @@ class Auth(QDialog):
 
     def __save_authentication(self, user):
         with open('log.txt', 'w', encoding='UTF-8') as log:
-            print(user)
             log.write(' '.join(map(str, user)))
-            print('сессия сохранена')
 
 
-
-class Task(QWidget):
+class Task(QWidget, Ui_FormTask):
     """
     Виджет окна решения задачи.
     :arg
         mainWin объект главного окна, в нем список выбранных задач и пользователь
             .user(login, name, id)
-            .tasks[id,...]
+            .tasks[id_1, id_2, ...]
         task[id, title, text, tests, decision, flag_done] текущая задача
     """
 
     def __init__(self, pk, mainWin):
         super(Task, self).__init__()
-        uic.loadUi('FormTask.ui', self)
+        self.setupUi(self)
         self.setWindowIcon(QIcon('python.jpg'))
         self.label_verdict.hide()
         self.label_verdict.setStyleSheet("background-color: #94db70;")
@@ -159,20 +156,21 @@ class Task(QWidget):
             cur = conn.cursor()
             if self.task[4]:
                 print('Перезаписываем решение')
-                request = f"""UPDATE user_decision SET complited = '{flag_done}', task_decision = "{code}" 
+                request = f"""UPDATE user_decision SET complited = '{flag_done}', task_decision = '{code.replace("'",'#!#' )}' 
                               WHERE task_id = '{self.task[0]}' AND user_id = '{MainWindow.user[2]}'"""
             else:
                 print('Сохраняем решение')
                 request = f"""INSERT INTO user_decision(task_id, complited, task_decision, user_id)
-                              VALUES ('{self.task[0]}', '{flag_done}', "{code}", '{MainWindow.user[2]}')"""
+                              VALUES ('{self.task[0]}', '{flag_done}', '{code.replace("'",'#!#' )}', '{MainWindow.user[2]}')"""
             self.task[4], self.task[5] = code, flag_done
+            cur.execute(request)
+            conn.commit()
+            conn.close()
             if self.task[5]:
                 self.label_verdict.show()
             else:
                 self.label_verdict.hide()
-            cur.execute(request)
-            conn.commit()
-            conn.close()
+
         else:
             msg = InfoMessage(
                 "Сохранение не удалось",
@@ -224,6 +222,7 @@ class Task(QWidget):
             decision = [['', 0]]
         task = list(task[0])
         task.extend(decision[0])
+        task[4] = task[4].replace('#!#', "'")
         return task
 
     def __view_task(self):
@@ -241,7 +240,7 @@ class Task(QWidget):
         self.output_answer.clear()
 
 
-class MainWindow(QMainWindow):
+class MainWindow(QMainWindow, Ui_MainWindow):
     '''
     Виджет главного окна.
     :arg
@@ -252,7 +251,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super(MainWindow, self).__init__()
-        uic.loadUi('MainWin.ui', self)
+        self.setupUi(self)
         self.setWindowTitle('Тренажер по python')
         self.setWindowIcon(QIcon('python.jpg'))
         self.about_dialog = About()
@@ -355,7 +354,6 @@ class MainWindow(QMainWindow):
             user = log.read().strip().split()
             if user[0] != 'None':
                 MainWindow.user = tuple(user)
-        print(MainWindow.user)
         self.__welcome_text()
 
 
